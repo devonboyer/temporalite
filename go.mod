@@ -12,7 +12,10 @@ require (
 	go.uber.org/zap v1.21.0
 )
 
-require go.temporal.io/api v1.7.1-0.20220326004856-88a7c92fb8b4 // indirect
+require (
+	go.temporal.io/api v1.7.1-0.20220326004856-88a7c92fb8b4 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+)
 
 require (
 	cloud.google.com/go v0.100.2 // indirect

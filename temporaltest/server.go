@@ -131,7 +131,7 @@ func NewServer(opts ...TestServerOption) *TestServer {
 	ts.server = s
 
 	go func() {
-		if err := s.Start(); err != nil {
+		if err := s.Start(context.Background()); err != nil {
 			ts.fatal(fmt.Errorf("error starting server: %w", err))
 		}
 	}()

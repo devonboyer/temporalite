@@ -17,6 +17,7 @@ import (
 	"go.temporal.io/server/common/dynamicconfig"
 	"go.temporal.io/server/schema/sqlite"
 	"go.temporal.io/server/temporal"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/DataDog/temporalite/internal/liteconfig"
 )
@@ -105,19 +106,33 @@ func NewServer(opts ...ServerOption) (*Server, error) {
 }
 
 // Start temporal server.
-func (s *Server) Start() error {
-	go func() {
-		if err := s.ui.Start(); err != nil {
-			panic(err)
-		}
-	}()
-	return s.internal.Start()
+func (s *Server) Start(ctx context.Context) error {
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(s.ui.Start)
+	g.Go(s.internal.Start)
+
+	<-ctx.Done()
+
+	return ctx.Err()
 }
 
 // Stop the server.
 func (s *Server) Stop() {
-	s.ui.Stop()
-	s.internal.Stop()
+	stopCh := make(chan struct{})
+
+	go func() {
+		s.ui.Stop()
+		s.internal.Stop()
+
+		close(stopCh)
+	}()
+
+	// Wait graceful termination or timeout.
+	select {
+	case <-stopCh:
+	case <-time.After(10 * time.Second):
+		s.config.Logger.Warn("Graceful termination timed out")
+	}
 }
 
 // NewClient initializes a client ready to communicate with the Temporal

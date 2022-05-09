@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	goLog "log"
 	"net"
@@ -228,9 +229,14 @@ func buildCLI() *cli.App {
 					return err
 				}
 
-				if err := s.Start(); err != nil {
+				ctx := temporalite.SetupSignalHandler()
+
+				if err := s.Start(ctx); err != nil && err != context.Canceled {
 					return cli.Exit(fmt.Sprintf("Unable to start server. Error: %v", err), 1)
 				}
+
+				s.Stop()
+
 				return cli.Exit("All services are stopped.", 0)
 			},
 		},
